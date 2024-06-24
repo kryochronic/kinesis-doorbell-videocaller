@@ -84,8 +84,8 @@ public class Message {
      */
     public static Message createOfferMessage(final SessionDescription sessionDescription, final String clientId) {
 
-        final String description = sessionDescription.description;
-
+        final String description = sessionDescription.description.replace("a=rtpmap:111 opus/48000/2\r\na=rtcp-fb:111 transport-cc\r\na=fmtp:111 minptime=10;useinbandfec=1\r\na=rtpmap:63 red/48000/2\r\na=fmtp:63 111/111\r\na=rtpmap:9 G722/8000\r\na=rtpmap:102 ILBC/8000\r\na=rtpmap:0 PCMU/8000\r\na=rtpmap:8 PCMA/8000\r\na=rtpmap:13 CN/8000\r\na=rtpmap:110 telephone-event/48000\r\na=rtpmap:126 telephone-event/8000",
+                                    "a=rtpmap:8 PCMA/8000").replace("111 63 9 102 0 8 13 110 126","8");
         final String offerPayload = "{\"type\":\"offer\",\"sdp\":\"" + description.replace("\r\n", "\\r\\n") + "\"}";
 
         final String encodedString = new String(Base64.encode(offerPayload.getBytes(), Base64.URL_SAFE | Base64.NO_WRAP));

@@ -1,6 +1,7 @@
 *.iml
 .gradle
 .idea/
+.vscode/
 /local.properties
 /.idea/caches
 /.idea/libraries
@@ -8,6 +9,7 @@
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+
 .DS_Store
 /captures
 .externalNativeBuild
@@ -16,4 +18,4 @@ local.properties
 app/libs/libwebrtc-*
 app/src/main/res/raw/awsconfiguration.json
 app/build
-
+logs/**

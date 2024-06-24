@@ -35,6 +35,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
+//import android.media.MediaRecorder.AudioSource;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -544,7 +545,7 @@ public class WebRtcActivity extends AppCompatActivity {
                         .setVideoDecoderFactory(vdf)
                         .setVideoEncoderFactory(vef)
                         .setAudioDeviceModule(JavaAudioDeviceModule.builder(getApplicationContext())
-                                .createAudioDeviceModule())
+                                .setAudioSource(android.media.MediaRecorder.AudioSource.MIC).createAudioDeviceModule())
                         .createPeerConnectionFactory();
 
         // Enable Google WebRTC debug logs
@@ -566,13 +567,16 @@ public class WebRtcActivity extends AppCompatActivity {
 
 
         if (isAudioSent) {
-            AudioSource audioSource = peerConnectionFactory.createAudioSource(new MediaConstraints());
+            MediaConstraints ac = createAudioConstraints();
+            org.webrtc.AudioSource audioSource = peerConnectionFactory.createAudioSource(ac);
             localAudioTrack = peerConnectionFactory.createAudioTrack(AudioTrackID, audioSource);
             localAudioTrack.setEnabled(true);
         }
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         originalAudioMode = audioManager.getMode();
+        audioManager.setMicrophoneMute(false);
+        audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
         originalSpeakerphoneOn = audioManager.isSpeakerphoneOn();
 
         if (isVideoSent) {
@@ -829,6 +833,8 @@ public class WebRtcActivity extends AppCompatActivity {
 
         sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
         sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
+        sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToSendVideo", "false"));
+
 
         if (localPeer == null) {
 
@@ -845,7 +851,10 @@ public class WebRtcActivity extends AppCompatActivity {
                 localPeer.setLocalDescription(new KinesisVideoSdpObserver(), sessionDescription);
 
                 final Message sdpOfferMessage = Message.createOfferMessage(sessionDescription, mClientId);
-
+                audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+                audioManager.setSpeakerphoneOn(false);
+                audioManager.setWiredHeadsetOn(true);
+//                audioManager.setSpeakerphoneOn(true);
                 if (isValidClient()) {
                     client.sendSdpOffer(sdpOfferMessage);
                 } else {
@@ -900,8 +909,7 @@ public class WebRtcActivity extends AppCompatActivity {
         if (remoteAudioTrack != null) {
             remoteAudioTrack.setEnabled(true);
             Log.d(TAG, "remoteAudioTrack received: State=" + remoteAudioTrack.state().name());
-            audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-            audioManager.setSpeakerphoneOn(true);
+
         }
 
         if (remoteVideoTrack != null) {
@@ -1029,4 +1037,23 @@ public class WebRtcActivity extends AppCompatActivity {
         final NotificationManager notificationManager = getSystemService(NotificationManager.class);
         notificationManager.createNotificationChannel(channel);
     }
+    private MediaConstraints createAudioConstraints() {
+        Log.d(TAG, "createAudioTrack");
+        MediaConstraints audioConstraints = new MediaConstraints();
+        // add all existing audio filters to avoid having echos
+        audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair("googEchoCancellation", "false"));
+        audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair("googEchoCancellation2", "false"));
+        audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair("googDAEchoCancellation", "false"));
+        audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair("googTypingNoiseDetection", "false"));
+        audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair("googAutoGainControl", "false"));
+        audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair("googAutoGainControl2", "false"));
+        audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair("googNoiseSuppression", "false"));
+        audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair("googNoiseSuppression2", "false"));
+        audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair("googAudioMirroring", "true"));
+        audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair("googHighpassFilter", "false"));
+
+        return audioConstraints;
+
+    }
+
 }
